@@ -6,6 +6,7 @@ from io import BytesIO
 from datetime import datetime
 from dotenv import load_dotenv
 import argparse
+import time
 
 load_dotenv()
 
@@ -66,12 +67,18 @@ if __name__ == "__main__":
 
     print(f"Sending request for image {INPUT_IMAGE} with prompt: {PROMPT} ...")
 
-    edit_response = requests.post(
+    # Time the HTTP request
+    start = time.perf_counter()
+    response = requests.post(
         edit_url,
         headers={'Api-Key': FOUNDRY_API_KEY, 'x-ms-model-mesh-model-name': deployment},
         data=request_body,
         files=files
-    ).json()
+    )
+    elapsed_sec = time.perf_counter() - start
+    print(f"Request completed in {elapsed_sec:.3f}s")
+
+    edit_response = response.json()
 
 
     """
