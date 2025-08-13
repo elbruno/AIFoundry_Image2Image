@@ -78,7 +78,7 @@ if __name__ == "__main__":
     elapsed_sec = time.perf_counter() - start
     print(f"Request completed in {elapsed_sec:.3f}s")
 
-    edit_response = response.json()
+    response_json = response.json()
 
 
     """
@@ -94,7 +94,7 @@ if __name__ == "__main__":
     )
 
     try:
-        for idx, item in enumerate(edit_response['data']):
+        for idx, item in enumerate(response_json['data']):
             b64_img = item['b64_json']
             filename = f"{filename_prefix}_{idx+1}.png"
             image = Image.open(BytesIO(base64.b64decode(b64_img)))
@@ -102,4 +102,4 @@ if __name__ == "__main__":
             image.save(filename)
             print(f"Image saved to: '{filename}'")
     except Exception as e:
-        print(f"Error saving images: {e}")
+        print(f"Error {e}:\n{response_json}")
