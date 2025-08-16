@@ -31,8 +31,16 @@ if __name__ == "__main__":
     if args.model:
         model = args.model.lower()
     else:
-        # Default to gpt-image-1 model
-        model = "gpt"
+        # Ask the user which model to use (gpt or flux). Default to gpt.
+        while True:
+            model_input = input("Select model to use ('gpt' or 'flux') [gpt]: ").strip().lower()
+            if model_input == "":
+                model = "gpt"
+                break
+            if model_input in ("gpt", "flux"):
+                model = model_input
+                break
+            print("Invalid selection. Please enter 'gpt' or 'flux'.")
 
     if model == "gpt":
         deployment = GPT_DEPLOYMENT_NAME
