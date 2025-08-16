@@ -16,8 +16,9 @@ FOUNDRY_API_KEY = os.getenv("FOUNDRY_API_KEY")
 FOUNDRY_API_VERSION = os.getenv("FOUNDRY_API_VERSION")
 FLUX_DEPLOYMENT_NAME = os.getenv("FLUX_DEPLOYMENT_NAME")
 GPT_DEPLOYMENT_NAME = os.getenv("GPT_DEPLOYMENT_NAME")
-INPUT_IMAGE = os.getenv("INPUT_IMAGE")
-PROMPT = os.getenv("PROMPT")
+# Note: We'll prompt the user for the input image path and the prompt at runtime
+INPUT_IMAGE = None
+PROMPT = None
 
 
 if __name__ == "__main__":
@@ -48,6 +49,32 @@ if __name__ == "__main__":
     """
 
     edit_url = f"{FOUNDRY_ENDPOINT}{base_path}/edits{params}"
+    # Prompt user for input image and prompt (do not read these from .env)
+    default_prompt = "update this image to be set in a pirate era"
+
+    # Request input image path (loop until a valid file path is provided or the user quits)
+    while True:
+        user_image = input("Enter path to input image (or type 'quit' to exit): ").strip()
+        if user_image.lower() == "quit":
+            print("Aborted by user.")
+            exit(0)
+        if user_image == "":
+            print("Please provide a path to an image file.")
+            continue
+        # Expand user and relative paths
+        user_image = os.path.expanduser(user_image)
+        if not os.path.isabs(user_image):
+            user_image = os.path.join(os.getcwd(), user_image)
+        if os.path.isfile(user_image):
+            INPUT_IMAGE = user_image
+            break
+        else:
+            print(f"File not found: {user_image}")
+
+    # Prompt for text prompt with a sensible default
+    user_prompt = input(f"Enter prompt [{default_prompt}]: ").strip()
+    PROMPT = user_prompt if user_prompt != "" else default_prompt
+
     request_body = {
         "prompt": PROMPT,
         "n": 1,
@@ -61,9 +88,13 @@ if __name__ == "__main__":
     else:
         request_body["quality"] = "hd"
 
-    files = {
-        "image": (INPUT_IMAGE, open(INPUT_IMAGE, "rb")),
-    }
+    try:
+        files = {
+            "image": (os.path.basename(INPUT_IMAGE), open(INPUT_IMAGE, "rb")),
+        }
+    except Exception as e:
+        print(f"Failed to open image file '{INPUT_IMAGE}': {e}")
+        exit(1)
 
     print(f"Sending request for image {INPUT_IMAGE} with prompt: {PROMPT} ...")
 
@@ -88,9 +119,11 @@ if __name__ == "__main__":
     # Create output directory if it doesn't exist
     os.makedirs("generated", exist_ok=True)
 
+    # Sanitize prompt for filename
+    safe_prompt = PROMPT.replace(" ", "_")[:50]
     filename_prefix = os.path.join(
         "generated",
-        f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{model}_{PROMPT.replace(' ', '_')[:50]}"
+        f"{datetime.now().strftime('%Y%m%d_%H%M%S')}_{model}_{safe_prompt}"
     )
 
     try:
