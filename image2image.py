@@ -30,15 +30,16 @@ if __name__ == "__main__":
 
     if args.model:
         model = args.model.lower()
-        if model == "gpt":
-            deployment = GPT_DEPLOYMENT_NAME
-        else:
-            deployment = FLUX_DEPLOYMENT_NAME
-        print(f"Using {deployment} model.")
     else:
-        model = "flux"
+        # Default to gpt-image-1 model
+        model = "gpt"
+
+    if model == "gpt":
+        deployment = GPT_DEPLOYMENT_NAME
+    else:
         deployment = FLUX_DEPLOYMENT_NAME
-        print(f"No -model argument provided. Using {deployment} model.")
+
+    print(f"Using {deployment} model.")
 
     base_path = f'openai/deployments/{deployment}/images'
     params = f'?api-version={FOUNDRY_API_VERSION}'
@@ -52,19 +53,42 @@ if __name__ == "__main__":
     # Prompt user for input image and prompt (do not read these from .env)
     default_prompt = "update this image to be set in a pirate era"
 
+    # Look for a default image in the current directory
+    image_extensions = ('.png', '.jpg', '.jpeg', '.bmp', '.gif', '.tiff', '.webp')
+    default_image = None
+    try:
+        for entry in os.listdir(os.getcwd()):
+            if entry.lower().endswith(image_extensions) and os.path.isfile(entry):
+                default_image = entry
+                break
+    except Exception:
+        default_image = None
+
     # Request input image path (loop until a valid file path is provided or the user quits)
     while True:
-        user_image = input("Enter path to input image (or type 'quit' to exit): ").strip()
+        if default_image:
+            prompt_msg = f"Enter path to input image [{default_image}] (or type 'quit' to exit): "
+        else:
+            prompt_msg = "Enter path to input image (or type 'quit' to exit): "
+
+        user_image = input(prompt_msg).strip()
         if user_image.lower() == "quit":
             print("Aborted by user.")
             exit(0)
+
+        # If user pressed Enter and we have a default, use it
+        if user_image == "" and default_image:
+            user_image = default_image
+
         if user_image == "":
             print("Please provide a path to an image file.")
             continue
+
         # Expand user and relative paths
         user_image = os.path.expanduser(user_image)
         if not os.path.isabs(user_image):
             user_image = os.path.join(os.getcwd(), user_image)
+
         if os.path.isfile(user_image):
             INPUT_IMAGE = user_image
             break
