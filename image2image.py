@@ -33,9 +33,9 @@ if __name__ == "__main__":
     else:
         # Ask the user which model to use (gpt or flux). Default to gpt.
         while True:
-            model_input = input("Select model to use ('gpt' or 'flux') [gpt]: ").strip().lower()
+            model_input = input("Select model to use ('gpt' or 'flux') [flux]: ").strip().lower()
             if model_input == "":
-                model = "gpt"
+                model = "flux"
                 break
             if model_input in ("gpt", "flux"):
                 model = model_input
